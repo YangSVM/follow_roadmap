@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
-修改为右手系
+修改为右手系. 1216
 '''
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 import rospy
 from std_msgs.msg import Int16MultiArray
@@ -82,17 +82,15 @@ class PurePursuit():
         self.posture[1] = (self.gps_msg.pose.pose.position.y)
 
         self.posture[2] = (self.gps_msg.twist.twist.angular.z)
-        yaw = self.posture[2]/180*np.pi
+        yaw = self.posture[2] / 180 * np.pi
 
-
-        new_bias_x=bias[0]*sin(yaw) + bias[1]*cos(yaw)
-        new_bias_y=-bias[0]*cos(yaw) + bias[1]*sin(yaw)
+        new_bias_x = bias[0] * sin(yaw) + bias[1 ]* cos(yaw)
+        new_bias_y= -bias[0] * cos(yaw) + bias[1] * sin(yaw)
         self.posture[0] = self.posture[0] + new_bias_x
         self.posture[1] = self.posture[1] + new_bias_y
 
         self.vel[0] = (self.gps_msg.twist.twist.linear.x)
         self.vel[1] = (self.gps_msg.twist.twist.linear.y)
-
 
         # if abs(self.gps_msg.twist.twist.linear.z - 42)>1e-3:
         #     return
