@@ -15,7 +15,8 @@ from utils.draw_lqr import draw_car
 # from formation_common.config_formation import *
 from formation_common.config_formation_continous import *
 
-
+n_car =8
+car_ids = [i+1 for i in range(n_car)]
 plt.ion()
 # 全局变量。
 preview_point = Point(0,0,0)

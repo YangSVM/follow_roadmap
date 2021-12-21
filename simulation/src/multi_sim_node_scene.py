@@ -5,6 +5,7 @@ v2.0 输入输出画图均采用右手系
 '''
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.lib.financial import ipmt
 import rospy
 from std_msgs.msg import Int16MultiArray
 from nav_msgs.msg import Odometry
@@ -15,11 +16,12 @@ from enum import Enum
 from geometry_msgs.msg import Point
 from trajectory_tracking.msg import Trajectory
 from math import pi
+import sys
 
 from formation_common.formation_zoo import formation_line
 from formation_common.config_formation_continous import *
 
-
+n_car = 8
 
 # 全局变量。
 preview_point = Point(0,0,0)
@@ -219,16 +221,7 @@ def simulation():
     vehicle_state_list = []
     global task
 
-    # task_names = ['zhencha', 'biandui', 'daji', 'jijie']
-    # fpath = '~/Documents/THREE_CAR'
-    # if task == -1:
-    #     fnames = ['east', 'mid-east', 'mid', 'mid-west', 'west']
-    #     task_name = task_names[0]
-    #     begin_poses = []
-    #     for fname in fnames:
-    #         begin_pose = np.loadtxt(fpath+task_name+fname)
-    #         begin_pose = begin_pose[0, :]
-    
+    task = -2
     # 侦查: 东，中，中东，中西，西
     if task==-1:                # 侦查
         poses = np.array([
@@ -283,138 +276,11 @@ def simulation():
     
     poses[:, -1] = poses[:, -1]*np.pi/180
     
-    if task == 0:
-        pix_poses, jc_poses, tp_pos = load_critial_poses(i_pix=0, i_jc=0, i_tp=0)
-
-        # pos_line =formation_line([0, -14], pi/2, n_car, d_car)
-        # pos_line =formation_line([8, 0], -pi/2, n_car, d_car)
-        pos_line =formation_line([6, 0], 0, n_pix, d_car)
-        # pos_line = np.zeros([n_car, 3])
-
-        # 场景1
-        # pos_line[:n_car, :] = np.array([
-        #     [ 5.149,0 , (90-182 )/180*pi],
-        #     [5.157 , 1.472  , (90-180 )/180*pi],
-        #     [ 5.157, 2.772     , (90- 180)/180*pi],
-
-        #     [ 5.176,  4.388     , (90-180.652  )/180*pi],
-        #     [ 5.157  ,5.837     , (90-179.266 )/180*pi],
-        #     [  5.159 , 7.275    , (90-180.087 )/180*pi],
-
-
-        # ])
-
-
-        # # 场景2
-        # pos_line[:n_car, :] = np.array([
-        #     [  -6.508, -5.767 , (90-326.603 )/180*pi],
-        #     [ -4.628, -5.781  , (90-358.694 )/180*pi],
-        #     [ -2.242, -5.795    , (90- 0.218)/180*pi],
-
-        #     [  -0.221 ,  -5.795    , (90-0.204  )/180*pi],
-        #     [2.238, -5.750      , (90-7.576 )/180*pi],
-
-        # ])
-
-
-        # # 场景3
-        # pos_line[:n_car, :] = np.array([
-        #     [  -3.477, 16.560     , (90-187.305 )/180*pi],
-        #     [ -0.905, 16.560    , (90-183.783  )/180*pi],
-        #     [  0.381, 16.560     , (90- 178.260)/180*pi],
-
-        #     [    2.728, 16.560   , (90-175.882   )/180*pi],
-        #     [ 5.075,16.560   ,     (90- 172 )/180*pi]
-        # ])
-
-
-        # # 场景4
-        # pos_line[:n_car, :] = np.array([
-        #     [  -3.900, -7.956   , (90-355.720 )/180*pi],
-        #     [ -2.201 , -7.956    , (90-356.438  )/180*pi],
-        #     [  -0.589, -7.956    , (90- 359.392)/180*pi],
-
-        #     [   1.506  , -7.952   , (90-359.468   )/180*pi],
-        #     [4.000 , -7.948  ,     (90- 357.768 )/180*pi],
-        #     [ 0.309 , -8.951  ,     (90- 359.310 )/180*pi],
-        # ])
-
-        for i in range(n_pix):
-            if pos_line.shape[1]>2:
-                vehicleState = VehicleState(pos_line[i, 0], pos_line[i, 1], pos_line[i, 2]) 
-            else:
-                vehicleState = VehicleState(pos_line[i, 0], pos_line[i, 1], -pi/2) 
-            vehicle_state_list.append(vehicleState)
-
-    if task == 1:
-
-        pos_line =formation_line([0, -14], pi/2, n_pix, d_car)
-        # pos_line =formation_line([r*2, -R+2*r + 1], pi/2, n_car, d_car)
-        state_map_origin = [2 ,17,-90]    
-        # state_map_origin = [2 ,-8,-90]    # fast  test
-        # state_map_origin = [-2, 8,-90]  # field test
-
-        for i in range(n_pix):
-            # vehicleState = VehicleState(state_map_origin[0]-2*i, state_map_origin[1], state_map_origin[2] *np.pi /180 )
-            vehicleState = VehicleState(pos_line[i, 0], pos_line[i, 1], pi/2)
-            vehicle_state_list.append(vehicleState)
-
-    if task == 2:   # after search
-        pos_line = formation_line([0, 14], -pi/2, n_pix, d_car)
-        for i in range(n_pix):
-            # vehicleState = VehicleState(state_map_origin[0]-2*i, state_map_origin[1], state_map_origin[2] *np.pi /180 )
-            vehicleState = VehicleState(pos_line[i, 0], pos_line[i, 1],  -pi/2)
-            vehicle_state_list.append(vehicleState)
-
-    if task ==3:
-        pix_points, jc_poses, tp_pos = load_critial_poses(i_pix=3, i_jc=1,i_tp=1)
-
-        pos_line =formation_line(pix_points[:2], pix_points[2], n_pix, d_car)
-
-        for i in range(n_pix):
-            vehicleState = VehicleState(pos_line[i, 0], pos_line[i, 1], pix_points[2] )
-            vehicle_state_list.append(vehicleState)
-
-    if task == 4:
-        global battle_pos, battle_theta, battle_theta_norm
-        pos_start_center = np.copy(battle_pos[1, :])
-        isAttackLeft = 1
-        d_theta = 20
-        d_pos_x = d_car/2
-        if isAttackLeft==1:
-            print('attack left')
-            d_pos_x = -d_pos_x
-        else:
-            print('attack right')
-            d_theta  = - d_theta
-        pos_start = formation_line(pos_start_center+ [-d_pos_x, 0], battle_theta-d_theta, n_pix, d_car)
-
-        for i in range(n_pix):
-            vehicleState = VehicleState(pos_start[i, 0], pos_start[i, 1], math.atan2(2, -1) )
-            vehicle_state_list.append(vehicleState)
-    
-    if task == 5:
-        pix_points, jc_poses, tp_pos = load_critial_poses(i_pix=3, i_jc=1,i_tp=1)
-
-        pos_line =formation_line(pix_points[:2], pix_points[2], n_pix, d_car)
-
-        for i in range(n_pix):
-            vehicleState = VehicleState(pos_line[i, 0], pos_line[i, 1], pix_points[2] )
-            vehicle_state_list.append(vehicleState)
-
-    # 极创
-    if 1 in color_ids.keys():
-        # jc_poses = [6, 8, -pi/2]
-        vehicleState = VehicleState(jc_poses[0], jc_poses[1], jc_poses[2])
+    for i_car in range(8):
+        vehicleState = VehicleState(poses[i_car, 0], poses[i_car, 1], poses[i_car, 2])
         vehicle_state_list.append(vehicleState)
-
-    # 运输车
-    if 2 in color_ids.keys():
-        # tp_pos = [-15, 7, -pi/2]
-        vehicleState = VehicleState(tp_pos[0], tp_pos[1], tp_pos[2])
-        vehicle_state_list.append(vehicleState)
-
-    for i in range(n_car):
+    car_ids = [1,2,3,4,5,6,7,8]
+    for i in range(8):
         id = car_ids[i]
         # 输入控制量
         rospy.Subscriber('car'+str(id)+'/control_cmd',Int16MultiArray, vehicle_update, vehicle_state_list[i])

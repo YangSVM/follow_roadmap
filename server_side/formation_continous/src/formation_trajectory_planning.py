@@ -155,7 +155,9 @@ class FormationTrajPlanning(MATrajPlanningBase):
         if state == FormationState.Stable:
             fps = self.stable_control(fps, poses, s_leader)
         elif state == FormationState.Obstacle:
-            fps = self.sequential_passing(self.fs.individual_csps, poses)
+            # fps = self.sequential_passing(self.fs.individual_csps, poses)
+            fps = self.queue_passing(self.fs.individual_csps, poses)
+
         elif state == FormationState.Transition:
             fps = self.transition_control(fps, poses, s_leader)
 
@@ -451,6 +453,119 @@ class FormationTrajPlanning(MATrajPlanningBase):
         print('sequential passing')
         return fps
 
+    def queue_passing(self, csps: List[Spline2D], poses: np.ndarray):
+        '''队列通行。在顺序通行更进一步，队列通过冲突点。
+        '''
+        if self.isSeqPassingInit == False:
+            self.isSeqPassingInit = True
+            cp, pos_formations_frenet, priority = self.sequential_passing_init(csps, poses)     # collision point
+            self.cp_seq_pass =cp
+            self.pos_formations_frenet_seq_pass = pos_formations_frenet
+            self.priority  =priority
+        else:
+            cp = self.cp_seq_pass
+            pos_formations_frenet = self.pos_formations_frenet_seq_pass
+            priority = self.priority
+        n_car = self.n_car
+
+        
+        # wp_x :  n_car*n_x
+        path_x, path_y,path_v = [], [], []  # 各车依次路径点的x，y坐标及速度
+
+        # 局部路径规划
+
+        # vehicle_states = formation_ros.vehicle_states
+        vehicle_formation_stage = [0 for i in range(n_car)]         # 车辆与关键点的相对位置
+        # last_trajectory = formation_ros.last_trajectory
+
+        frenet_car = np.ones([n_car, 2])
+            
+        for i_car in range(n_car):
+            csp = csps[i_car]
+            frenet_car[i_car, :] = cartesian2frenet(poses[i_car, 0], poses[i_car, 1], csp)
+            for i_stage in range(pos_formations_frenet.shape[0]): 
+                if frenet_car[i_car, 0] > pos_formations_frenet[i_stage, i_car, 0] - 1e-2:
+                    vehicle_formation_stage[i_car] = i_stage
+
+
+
+        # 计算路程
+        s_pos = [cartesian2frenet(pos[0],pos[1],self.fs.individual_csps[i_car])[0] for i_car, pos in enumerate(poses)]
+        s_remain = [s1-s2 for s1,s2 in zip(pos_formations_frenet[1, :], s_pos)]
+        # leader控制为常速.
+        # s0 = s_remain[self.leader_id]
+        s0 = min(s_remain)
+        delta_s_remain = np.array([s - s0  for s in s_remain])
+        # 增加调整参数:     
+        ddelta_s = np.array(self.fs.ddelta_s)
+        s0 = min(s_remain)
+        delta_s_remain = np.array([s - s0  for s in s_remain])
+
+        if len(ddelta_s)>0:
+            
+            # 增加功能，如果前一辆车已经到达终点，无需继续减速
+            s_remain = np.array(s_remain).reshape([-1])
+            b_car = s_remain<1
+            ddelta_s_leader = np.max(ddelta_s)
+            ddelta_s[b_car] = -1000
+            i_car = np.argmax(ddelta_s)         # 此车不需要进行减速
+    
+            for i in range(self.n_car):
+                if i == i_car:
+                    delta_s_remain[i] += ddelta_s_leader
+                else:
+                    delta_s_remain[i] += ddelta_s[i]
+
+
+        # 前馈控制 - 根据距离计算之后的速度
+        dt = 3            # 下一次轨迹规划完成时，能够调整好队形
+        d_v = delta_s_remain/dt
+
+        v_target = self.fs.v
+        # DV_RATIO 以内的加减速
+        d_v[d_v>DV_RATIO*v_target] = DV_RATIO*v_target
+        d_v[d_v<-DV_RATIO*v_target] = -DV_RATIO*v_target
+        v = v_target +d_v
+
+        v_str = ['{:.2f}'.format(vi[0]) for vi in v]
+        print(10*'-' + 'FormationState: Transition : v: ', v_str)
+        print('s_remain_real: ', ["{0:0.2f}".format(s)  for s in s_remain])
+        print('delta_s:', delta_s_remain)
+        print('delta_s input: ', self.fs.ddelta_s)
+        print('v: ', v_str)
+
+        # 车辆轨迹控制
+        # 阶段小于1的车， 按顺序启动。已经阶大于1的车，匀速前进
+        for i_car in range(n_car):
+            # 
+            csp = csps[i_car]
+            end_x = csp.sx.y[-1]
+            end_y = csp.sy.y[-1]
+            if np.hypot(poses[i_car, 0] - end_x, poses[i_car, 1]- end_y) <=1:
+                print("Goal!")
+                path_x.append([])
+                path_y.append([])
+                path_v.append([])
+                continue
+            
+            
+            if vehicle_formation_stage[i_car]>0:            # 已经通过的车辆正常通行
+                tmp_x, tmp_y, tmp_v = cut_csp(csps[i_car], frenet_car[i_car, 0], v_const=self.fs.v)
+            else:           # car2pass
+                tmp_x, tmp_y, tmp_v = cut_csp(csps[i_car], frenet_car[i_car, 0], v_const=v[i_car])
+            path_x.append(tmp_x)
+            path_y.append(tmp_y)
+            path_v.append(tmp_v)
+
+
+        fps = [FrenetPath() for i in range(n_car)]
+        for i, fp in enumerate(fps):
+            fp.x = path_x[i]
+            fp.y = path_y[i]
+            fp.v = path_v[i]
+
+        print(10*'*'+'Queue Passing' + 10*'*')
+        return fps
 
 def cut_csp(csp:Spline2D, s0, delta_s=10, v_const = TARGET_SPEED):
     s_end = s0+delta_s

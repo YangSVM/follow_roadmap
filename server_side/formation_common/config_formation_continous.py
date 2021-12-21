@@ -12,7 +12,7 @@ TARGET_SPEED = 3
 ds_formation_transition = 5    # 队形调整间距
 
 # 全局任务信息，初始化为0
-task = 0
+task = 3
 
 
 n_pix = 5

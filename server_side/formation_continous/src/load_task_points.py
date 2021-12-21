@@ -616,7 +616,7 @@ def occupy2():
     # plot_scenario(individuals=individuals)
     fs.priority = np.array([4,0,3,1,2])         # 每辆车的通行权(通行次序)。数字越小越先通行。
     fs.v = 2            # 此场景速度降低
-
+    fs.ddelta_s = np.array([0,10,20,30,40])
     # jc
     individuals_jc = dubins_pf_pro(jc_points, r=r_jc)
     individuals_tp= dubins_pf_pro(tp_points, r=r_tp)

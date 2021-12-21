@@ -5,7 +5,7 @@ import rospy
 from  nav_msgs.msg  import Odometry
 import math
 
-n_car = 7
+n_car = 1
 
 pose_lists = [[] for i in range(n_car)]
 
@@ -22,7 +22,7 @@ def divide():
 
 def record(data, id):
     
-    f = open("routes/scene_2_vel_3_true"+str(id)+".txt", "w")
+    f = open("routes/field_test"+str(id)+".txt", "w")
     
     for item in data:
         v = math.hypot(item.twist.twist.linear.x, item.twist.twist.linear.y)
@@ -39,7 +39,8 @@ def receive():
     rospy.init_node("receive_vel", anonymous=True)
     
     for id in range(n_car):
-        rospy.Subscriber('car'+str(id)+'/gps', Odometry, msgCallback, id)
+        # rospy.Subscriber('car'+str(id)+'/gps', Odometry, msgCallback, id)
+        rospy.Subscriber('car'+'/gps', Odometry, msgCallback, id)
 
 
     rate = rospy.Rate(10)

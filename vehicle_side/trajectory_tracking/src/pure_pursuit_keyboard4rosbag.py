@@ -42,7 +42,7 @@ class PurePursuit():
         self.preview_point = Point()
 
         # 输入 gnss, 规划的局部避撞轨迹
-        rospy.Subscriber('/car/gps', Odometry, self.compute_cmd)
+        rospy.Subscriber('/car'+str(self.host)+'/gps', Odometry, self.compute_cmd)
         # 读取keyboard指令
         rospy.Subscriber('/control_flag', Int16MultiArray, self.get_control_flag)
 
@@ -147,7 +147,7 @@ class PurePursuit():
 
         # 车辆轴距为0.8。前轮转角 angle = L *kappa
         angle = math.atan(0.8/2 * preview_curvature) * 180 / np.pi
-        rospy.logwarn("angle:"+ str(angle))
+        # rospy.logwarn("angle:"+ str(angle))
 
         #angle = (math.atan(0.8 * preview_curvature) * 180 / np.pi)/2
         #rospy.logwarn("angle2: " + str(angle))
@@ -157,7 +157,7 @@ class PurePursuit():
 
         # 转角右转为正
         if np.isnan(angle):
-            rospy.logwarn('purepursuit. 135 angle is None')
+            # rospy.logwarn('purepursuit. 135 angle is None')
             angle = 0
         self.cmd.data[1] = int(angle * 1024 / 30)
 
@@ -247,14 +247,14 @@ class PurePursuit():
         self.is_local_trajectory_ready = True
         roadMapPath = rospy.get_param("/car"+str(self.host)+"/roadMapPath")
         # roadMapPath = rospy.get_param("/roadMapPath")
-        rospy.logwarn(roadMapPath)
+        # rospy.logwarn(roadMapPath)
 
         with open(roadMapPath, "r") as f:
             for line in f.readlines():
                 line = line.strip()
                 line = line.split()
                 roadpoints = RoadPoint()
-                rospy.logwarn(line)
+                # rospy.logwarn(line)
                 roadpoints.x = float(line[1])
                 roadpoints.y = float(line[2])
                 roadpoints.v = float(line[6])

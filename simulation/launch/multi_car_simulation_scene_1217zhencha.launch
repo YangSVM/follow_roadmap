@@ -1,0 +1,64 @@
+<launch>
+  <arg name="host1" value="1" />
+  <arg name="host2" value="2" />
+  <arg name="host3" value="3" />
+  <arg name="host4" value="4" />
+  <arg name="host5" value="5" />
+  <arg name="host6" value="6" />
+  <arg name="host7" value="7" />
+  <arg name="host8" value="8" />
+
+  <arg name="task_name" value="zhencha" />
+
+
+  <node pkg="simulation" name="simulation_multi" type="multi_sim_node_scene.py"> </node>
+
+
+  <group ns="car1">
+
+    <rosparam param="roadMapPath"> "/home/tiecun/Documents/routes_12_17/zhencha/1.txt" </rosparam>
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py" args="$(arg host1)"> </node>
+  </group>
+
+
+  <group ns="car2">
+    <rosparam param="roadMapPath">"/home/tiecun/Documents/routes_12_17/zhencha/2.txt" </rosparam>
+
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py"  args="$(arg host2)"> </node>
+  </group>
+
+  <group ns="car3">
+      <rosparam param="roadMapPath">"/home/tiecun/Documents/routes_12_17/zhencha/3.txt" </rosparam>
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py" args="$(arg host3)"> </node>
+  </group>
+
+  <group ns="car4">
+      <rosparam param="roadMapPath">"/home/tiecun/Documents/routes_12_17/zhencha/4.txt" </rosparam>
+
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py" args="$(arg host4)"> </node>
+  </group>
+
+  <group ns="car5">
+      <rosparam param="roadMapPath">"/home/tiecun/Documents/routes_12_17/zhencha/5.txt" </rosparam>
+
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py" args="$(arg host5)"> </node>
+  </group>
+
+
+  <group ns="car6">
+      <rosparam param="roadMapPath">"/home/tiecun/Documents/routes_12_17/zhencha/6.txt" </rosparam>
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py" args="$(arg host6)"> </node>
+  </group>
+
+
+  <group ns="car7">
+      <rosparam param="roadMapPath">"/home/tiecun/Documents/routes_12_17/zhencha/7.txt" </rosparam>
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py" args="$(arg host7)"> </node>
+  </group>
+
+  <group ns="car8">
+      <rosparam param="roadMapPath">"/home/tiecun/Documents/routes_12_17/zhencha/8.txt" </rosparam>
+    <node pkg="trajectory_tracking" name="pure_pursuit" type="pure_pursuit_keyboard4rosbag.py" args="$(arg host8)"> </node>
+  </group>
+  
+</launch>
