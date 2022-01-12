@@ -1,0 +1,8 @@
+<launch>
+
+  <!-- <node pkg="grpc_communication" name="receive_gnss" type="receive_gnss.py"> </node> -->
+  <node pkg="grpc_communication" name="send_traj" type="send_traj.py"> </node>
+  <node pkg="grpc_communication" name="receive_ad_info" type="receive_ad_info.py"> </node>
+  <node pkg="grpc_communication" name="stage_control" type="stage_control.py"> </node>
+
+</launch>

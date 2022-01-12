@@ -8,6 +8,7 @@
         "/home/tiecun/catkin_ws/devel/lib/python2.7/dist-packages",
         "/opt/ros/melodic/lib/python2.7/dist-packages",
         "/home/tiecun/catkin_ws/src/MA-L5-THICV/trajectory_tracking",
-        "./server_side/formation_continous/src"
+        "./server_side/formation_continous/src",
+        "./server_side/grpc_communication/src"
     ]
 }

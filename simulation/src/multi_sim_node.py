@@ -218,7 +218,7 @@ def simulation():
     # x,y,yaw.右手系
     vehicle_state_list = []
     global task
-
+    
     # task_names = ['zhencha', 'biandui', 'daji', 'jijie']
     # fpath = '~/Documents/THREE_CAR'
     # if task == -1:

@@ -35,7 +35,7 @@ feature:
 	/car/gps    :nav_msgs::Odometry     gps_msg  
                 gps_msg.pose.pose.position.x                    正东正方向
                 gps_msg.pose.pose.position.y                    正北正方向
-                gps_msg.twist.twist.angular.z                      正东为0，逆时针为正。角度制。
+                gps_msg.twist.twist.angular.z                      正东为0，逆时针为正。角度制。(-180, 180]
                 gps_msg.twist.twist.linear.x                          东向速度
                 gps_msg.twist.twist.linear.y                          北向速度
 	/car/gpxxx_raw String  打印串口原始输出

@@ -1,5 +1,13 @@
 # ……
-1. 各程序包说明
+1. 环境部署：
+   .bashrc文件中
+   ```bash
+   # [!!!注意]。添加python包路径。部署到新机器时需要添加如下代码才能运行
+   export PYTHONPATH=$PYTHONPATH:/home/tiecun/catkin_ws/src/server_side
+   export PYTHONPATH=$PYTHONPATH:/home/tiecun/catkin_ws/src/server_side/grpc_communication/src
+
+   ```
+2. 各程序包说明
 - followRoadmap 最原始的循迹代码。读取采集的txt(gnss_gpchc_driver/map)作为输入，接收GPS信号，发送底盘控制信号
 - gnss_gpchc_driver GNSS驱动包。使用节点 gnssrtk_node。读取串口数据，输出nav_msgs/Odometry数据。/map文件夹保存采集的路点文件
 - pix_driver-master PIX提供底盘驱动程序。使用Int16Multiarray结构的/control_cmd话题进行控制底盘。详细协议看pix_driver-master下的README-zh.md文件

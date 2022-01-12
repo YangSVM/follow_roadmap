@@ -56,8 +56,6 @@ class PurePursuit():
 
         # 输入 gnss, 规划的局部避撞轨迹
         rospy.Subscriber('/car'+'/gps', Odometry, self.compute_cmd)
-        # 读取keyboard指令
-        rospy.Subscriber('/control_flag', Int16MultiArray, self.get_control_flag)
 
         # 输出控制指令
         self.pub_cmd = rospy.Publisher('control_cmd', Int16MultiArray, queue_size=1)
@@ -85,10 +83,8 @@ class PurePursuit():
             self.rate.sleep()
 
     def compute_cmd(self, msg):
-        #rospy.logwarn('control flag:'+str(self.contrl_flag))
         #rospy.logwarn('control id:'+str(self.host))
 
-        self.error_ending = True
         self.is_gps_ready = True
 
         # 赋值
@@ -107,9 +103,6 @@ class PurePursuit():
         self.vel[0] = (self.gps_msg.twist.twist.linear.x)
         self.vel[1] = (self.gps_msg.twist.twist.linear.y)
 
-        # if abs(self.gps_msg.twist.twist.linear.z - 42)>1e-3:
-        #     return
-
         if not self.is_local_trajectory_ready:
             rospy.logwarn('waiting for local trajectory')
             return
@@ -120,29 +113,23 @@ class PurePursuit():
             self.cmd.data[0] = 0
             return
 
+        # local_traj_xy
         local_traj_xy = np.zeros([n_roadpoint, 2])
         for i in range(n_roadpoint):
             local_traj_xy[i, 0] = self.local_traj.roadpoints[i].x
             local_traj_xy[i, 1] = self.local_traj.roadpoints[i].y
 
-        # local_traj_xy
-        
-        # 边界情况。收到空的局部轨迹，停车
-        if len(local_traj_xy) == 0:
-            self.cmd.data[0] = 0
-            self.cmd.data[1] = 0
-            return
-
         # find the current waypoint according to distance.
         id_current, distance_current = self.get_current_roadpoint(local_traj_xy, self.posture)
+
         position_current = local_traj_xy[id_current,:]
-        rospy.logwarn("position:"+str(position_current) )
         stop_duration = time.time() - self.stop_time
+
         if self.road_type[id_current] == 1:
             if self.stop_place is not None:
                 pre_stop_distance = np.linalg.norm(position_current - self.stop_place, axis=0)
                 if pre_stop_distance > 1 and stop_duration  > self.stop_time_queue[0]:
-                    rospy.logwarn('进入停止阶段')
+                    rospy.logwarn('next stop place')
                     self.cmd.data[0] = 0
                     self.cmd.data[1] = 0
                     self.stop_time = time.time()
@@ -150,7 +137,7 @@ class PurePursuit():
                     self.stop_time_queue.pop(0)
                     return
             else:
-                rospy.logwarn('到第一个停车点')
+                rospy.logwarn('first stop place')
                 self.cmd.data[0] = 0
                 self.cmd.data[1] = 0
                 self.stop_time = time.time()
@@ -166,8 +153,8 @@ class PurePursuit():
             return
 
         # 最近点太远直接停车
-        if distance_current > 0.5:
-            rospy.logwarn(10*'*-'+'偏离路线太远，停车'+10*'-*')
+        if distance_current > 1.0:
+            rospy.logwarn('*'+10*'-'+'偏离路线太远，停车'+10*'-'+'*')
             self.cmd.data[0] = 0
             self.cmd.data[1] = 0
             return
@@ -195,7 +182,7 @@ class PurePursuit():
 
         #angle = (math.atan(0.8 * preview_curvature) * 180 / np.pi)/2
         #rospy.logwarn("angle2: " + str(angle))
-    
+
         if np.abs(angle) > 30:
             angle = np.sign(angle) * 30
 
@@ -207,20 +194,7 @@ class PurePursuit():
 
         vel_target = self.local_traj.roadpoints[id_current].v
         vel_current = np.linalg.norm(self.vel)
-
-        # 速度滤波
-        # delta_v = 2
-        # if vel_target > vel_current +delta_v:
-        #     vel_cmd = vel_current +delta_v
-        # elif vel_target < vel_current - delta_v:
-        #     vel_cmd = vel_current -delta_v
-        # else:
-        #     vel_cmd = vel_target
         vel_cmd = vel_target
-        # 反向时，换倒车档
-        # if vel_cmd<0:
-        #     vel_cmd = abs(vel_cmd)
-        #     self.cmd.data[3] = 3
 
         if vel_cmd == 0:
             rospy.logwarn('current roadpoint 0 velocity.Stop!')
@@ -237,19 +211,11 @@ class PurePursuit():
             rospy.logwarn('pp end road')
             vel_cmd = min(vel_cmd, v_slow)
 
-        # control flag控制
-        # if self.contrl_flag == -1:
-        #     vel_cmd = 0
-
         self.cmd.data[0] = int(vel_cmd * 36)
 
         # 正常运行时，从此处完成
         self.error_ending = False
         return
-
-    def get_control_flag(self, msg):
-        rospy.logwarn('pp: '+str(self.host-1)+str(msg.data[self.host - 1]))
-        self.contrl_flag = msg.data[self.host - 1]
 
     def get_current_roadpoint(self, local_traj_xy, posture):
         position = posture[:2]
@@ -259,11 +225,11 @@ class PurePursuit():
 
         index = np.where(np.abs(min_distance - distance) < 0.05)
         index = index[0][-1]
-        # if min_distance > 0:
-        #     rospy.logwarn('当前偏差: \t' + str(min_distance) )
-        #     rospy.logwarn('当前位置:\t'+str(position))
-        #     deviation = local_traj_xy[index, :] - position
-        #     rospy.logwarn('调整方向: \t'+str(deviation))
+        if min_distance > 0:
+            rospy.logwarn('当前偏差: \t' + str(min_distance) )
+            rospy.logwarn('当前位置:\t'+str(position))
+            deviation = local_traj_xy[index, :] - position
+            rospy.logwarn('调整方向: \t'+str(deviation))
 
         return index, min_distance
 
@@ -271,12 +237,6 @@ class PurePursuit():
         position = local_traj_xy[id_current,:]#posture[:2]
         # 距离自车距离再增加1m
         distance = np.linalg.norm(local_traj_xy[id_current:, :] - position, axis=1) - preview_distance
-        
-        # 距离自车最近点再增加1m
-        # s = np.linalg.norm(local_traj_xy[1:, :] - local_traj_xy[:-1, :], axis=1)
-        # s = np.cumsum(s)
-
-        # distance = np.abs(s -1)
 
         id_preview = np.argmin(np.abs(distance))
 

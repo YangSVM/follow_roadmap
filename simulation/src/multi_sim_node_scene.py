@@ -221,15 +221,15 @@ def simulation():
     vehicle_state_list = []
     global task
 
-    task = -2
+    task = -1
     # 侦查: 东，中，中东，中西，西
     if task==-1:                # 侦查
         poses = np.array([
-            [0, -9, 21.8],
-            [-3.974 , -7.500,  72.940],
-            [-1.987 ,-8.250 ,26.042],
-            [-5.962 , -8.250,  120.734],
-            [-7.949,  -9.000 , 135.861],
+            [0, -9, 21.8],                          # east
+            [-3.974 , -7.500,  72.940],     # mid
+            [-1.987 ,-8.250 ,26.042],       # mideast
+            [-5.962 , -8.250,  120.734],    # mid west
+            [-7.949,  -9.000 , 135.861],    # west
             [4.000 ,-14.000  ,90.098],                  # 极创
             [-5.700 , -13.000 , 79.123],            # 运输1
             [1.000 , -14.000,  90.134]  ,                #运输2
@@ -290,7 +290,7 @@ def simulation():
         rospy.Subscriber('/temp_goal', Trajectory, get_wp)
 
     # 输出GPS坐标
-    state_pubs = [rospy.Publisher('car'+str(id)+'/gps', Odometry, queue_size=1) for id in car_ids]
+    state_pubs = [rospy.Publisher('car'+str(id)+'/car/gps', Odometry, queue_size=1) for id in car_ids]
 
     rate = rospy.Rate(10)
 
